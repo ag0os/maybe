@@ -198,6 +198,12 @@ class Demo::Generator
       # EUR checking (EUR)
       @eu_checking = family.accounts.create!(accountable: Depository.new, name: "Deutsche Bank EUR Account", balance: 0, currency: "EUR")
 
+      # ARS savings (Argentinean Pesos)
+      @ars_savings = family.accounts.create!(accountable: Depository.new, name: "Banco de la Nación Argentina Savings", balance: 0, currency: "ARS")
+
+      # Banco Galicia USD account
+      @galicia_usd = family.accounts.create!(accountable: Depository.new, name: "Banco Galicia USD Account", balance: 0, currency: "USD")
+
       # Credit cards (USD)
       @amex_gold = family.accounts.create!(accountable: CreditCard.new, name: "Amex Gold Card", balance: 0, currency: "USD")
       @chase_sapphire = family.accounts.create!(accountable: CreditCard.new, name: "Chase Sapphire Reserve", balance: 0, currency: "USD")
@@ -280,6 +286,12 @@ class Demo::Generator
 
       puts "   🔒 Generating crypto & misc asset transactions..."
       generate_crypto_and_misc_assets!
+
+      puts "   🇦🇷 Generating ARS savings account transactions..."
+      generate_ars_transactions!
+
+      puts "   🏦 Generating Banco Galicia USD transactions..."
+      generate_galicia_usd_transactions!
 
       puts "   ✅ Reconciling balances to target snapshot..."
       reconcile_balances!(family)
@@ -659,6 +671,8 @@ class Demo::Generator
       create_transaction!(@ally_checking, -2_000, "Initial Deposit", @salary_cat, 12.years.ago.to_date)
       create_transaction!(@marcus_savings, -10_000, "Initial Savings", @salary_cat, 12.years.ago.to_date)
       create_transaction!(@eu_checking, -5_000, "EUR Account Opening", nil, 4.years.ago.to_date)
+      create_transaction!(@ars_savings, -50_000, "ARS Account Opening", nil, 2.years.ago.to_date)
+      create_transaction!(@galicia_usd, -15_000, "Galicia USD Account Opening", nil, 18.months.ago.to_date)
 
       # Car purchases (realistic amounts)
       create_transaction!(@chase_checking, 3_000, "Car Down Payment", @transportation_cat, 6.years.ago.to_date)
@@ -694,6 +708,20 @@ class Demo::Generator
         next unless date.day == 1 && [ 1, 4, 7, 10 ].include?(date.month) # Quarterly
         amount = rand(1000..2000)
         create_transfer!(@chase_checking, @hsa_investment, amount, "HSA Contribution", date)
+      end
+
+      # Monthly ARS savings transfers (since account opening 2 years ago)
+      (2.years.ago.to_date..Date.current).each do |date|
+        next unless date.day == rand(10..15) && rand < 0.8 # Monthly transfers
+        amount = rand(2000..5000) # USD equivalent transferred and converted to ARS
+        create_transfer!(@chase_checking, @ars_savings, amount, "ARS Savings Transfer", date)
+      end
+
+      # Bi-monthly transfers to Galicia USD account (since account opening 18 months ago)
+      (18.months.ago.to_date..Date.current).each do |date|
+        next unless date.day == rand(1..5) && date.cweek.even? && rand < 0.6 # Bi-monthly transfers
+        amount = rand(1000..3000) # USD transfers to Argentina
+        create_transfer!(@chase_checking, @galicia_usd, amount, "Transfer to Galicia USD", date)
       end
 
       # Occasional windfalls (tax refunds, bonuses, etc.)
@@ -1163,6 +1191,104 @@ class Demo::Generator
       # One-time USDC deposit 18 months ago
       deposit_date = 18.months.ago.to_date
       create_transaction!(@coinbase_usdc, -3_500, "Initial USDC Deposit", nil, deposit_date)
+    end
+
+    # ---------------------------------------------------------------------------
+    # ARS Savings Account Transactions
+    # ---------------------------------------------------------------------------
+    def generate_ars_transactions!
+      # Local ARS expenses and transactions (since account opening 2 years ago)
+
+      # Occasional local purchases in Argentina
+      15.times do
+        date = rand(2.years.ago.to_date..Date.current)
+        amount = rand(5000..25000) # ARS amounts (higher numbers due to currency)
+        merchants = [ "Mercado Libre", "Farmacity", "Disco Supermarket", "Falabella", "YPF Gas Station" ]
+        create_transaction!(@ars_savings, amount, merchants.sample, @shopping_cat, date)
+      end
+
+      # Local dining and entertainment in ARS
+      12.times do
+        date = rand(2.years.ago.to_date..Date.current)
+        amount = rand(3000..15000) # ARS restaurant costs
+        places = [ "La Parolaccia", "Don Julio", "Café Tortoni", "McDonald's Argentina", "Starbucks Buenos Aires" ]
+        create_transaction!(@ars_savings, amount, places.sample, @restaurants_cat, date)
+      end
+
+      # Local transportation costs
+      20.times do
+        date = rand(2.years.ago.to_date..Date.current)
+        amount = rand(500..3000) # ARS transport costs
+        transport = [ "SUBE Card Top-up", "Taxi", "Uber Argentina", "Parking Buenos Aires" ]
+        create_transaction!(@ars_savings, amount, transport.sample, @transportation_cat, date)
+      end
+
+      # ATM withdrawals in ARS
+      8.times do
+        date = rand(2.years.ago.to_date..Date.current)
+        amount = rand(10000..50000) # ARS cash withdrawals
+        create_transaction!(@ars_savings, amount, "ATM Withdrawal Buenos Aires", @misc_cat, date)
+      end
+
+      # Occasional income in ARS (freelance work, etc.)
+      6.times do
+        date = rand(2.years.ago.to_date..Date.current)
+        amount = -rand(20000..100000) # Negative for income in ARS
+        create_transaction!(@ars_savings, amount, "Freelance Work Argentina", @freelance_cat, date)
+      end
+    end
+
+    # ---------------------------------------------------------------------------
+    # Banco Galicia USD Account Transactions
+    # ---------------------------------------------------------------------------
+    def generate_galicia_usd_transactions!
+      # USD transactions in Argentina (since account opening 18 months ago)
+
+      # High-end purchases in USD in Argentina
+      8.times do
+        date = rand(18.months.ago.to_date..Date.current)
+        amount = rand(200..800) # USD amounts for upscale purchases
+        merchants = [ "Falabella Premium", "Zara Buenos Aires", "Alto Palermo Shopping", "Samsung Argentina", "Apple Store Palermo" ]
+        create_transaction!(@galicia_usd, amount, merchants.sample, @shopping_cat, date)
+      end
+
+      # Premium dining and entertainment in USD
+      6.times do
+        date = rand(18.months.ago.to_date..Date.current)
+        amount = rand(80..300) # USD restaurant/entertainment costs
+        places = [ "Alvear Palace Hotel", "Four Seasons Buenos Aires", "Palacio Duhau", "Elena Restaurant", "Gran Bar Danzón" ]
+        create_transaction!(@galicia_usd, amount, places.sample, @restaurants_cat, date)
+      end
+
+      # International services and subscriptions paid from Argentina
+      12.times do
+        date = rand(18.months.ago.to_date..Date.current)
+        amount = rand(15..150) # USD for international services
+        services = [ "Adobe Creative Cloud", "Microsoft 365", "Zoom Pro", "AWS Services", "GitHub Pro", "Figma Professional" ]
+        create_transaction!(@galicia_usd, amount, services.sample, @entertainment_cat, date)
+      end
+
+      # USD ATM withdrawals in Argentina
+      5.times do
+        date = rand(18.months.ago.to_date..Date.current)
+        amount = rand(100..500) # USD cash withdrawals
+        create_transaction!(@galicia_usd, amount, "USD ATM Withdrawal Buenos Aires", @misc_cat, date)
+      end
+
+      # Property/investment related payments in USD
+      4.times do
+        date = rand(18.months.ago.to_date..Date.current)
+        amount = rand(500..2000) # USD for investments/property
+        purposes = [ "Property Management Fee", "Investment Advisory", "Legal Services Argentina", "Accounting Services USD" ]
+        create_transaction!(@galicia_usd, amount, purposes.sample, @misc_cat, date)
+      end
+
+      # Occasional USD income (consulting, freelance)
+      3.times do
+        date = rand(18.months.ago.to_date..Date.current)
+        amount = -rand(1000..5000) # Negative for income in USD
+        create_transaction!(@galicia_usd, amount, "USD Consulting Argentina", @freelance_cat, date)
+      end
     end
 
     # ---------------------------------------------------------------------------
